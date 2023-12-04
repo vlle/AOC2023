@@ -111,12 +111,10 @@ vector<int> getCardCopyCount(card &c) {
   return copies;
 }
 
-void solve2(vector<string> lines) {
+void solve2(vector<string> &lines) {
   vector<card> cards;
-  set<card> all;
   for (size_t i = 0; i < lines.size(); i++) {
     cards.push_back(getCardCopy(lines[i]));
-    all.insert(cards[i]);
   }
 
   stack<card> s;
@@ -133,7 +131,6 @@ void solve2(vector<string> lines) {
     }
     count++;
   }
-  cout << all.size() << endl;
   cout << count << endl;
 }
 
