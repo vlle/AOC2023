@@ -1,9 +1,11 @@
 #include "../cc_common/common.h"
+#include <algorithm>
 #include <iostream>
 #include <set>
 #include <stack>
 #include <stdexcept>
 #include <string>
+#include <unordered_map>
 #include <unordered_set>
 
 using namespace std;
@@ -60,13 +62,52 @@ struct card {
   int number;
   unordered_set<int> winning_numbers;
   vector<int> scratched_numbers;
+  card(){
+
+  };
   card(int n) : number(n){};
   card(int n, unordered_set<int> w, vector<int> s)
       : number(n), winning_numbers(w), scratched_numbers(s){};
 
+  card(const card &other)
+      : number(other.number), winning_numbers(other.winning_numbers),
+        scratched_numbers(other.scratched_numbers) {}
+
+  // Move constructor
+  card(card &&other) noexcept
+      : number(std::move(other.number)),
+        winning_numbers(std::move(other.winning_numbers)),
+        scratched_numbers(std::move(other.scratched_numbers)) {}
+
+  // Copy assignment operator
+  card &operator=(const card &other) {
+    if (this != &other) {
+      number = other.number;
+      winning_numbers = other.winning_numbers;
+      scratched_numbers = other.scratched_numbers;
+    }
+    return *this;
+  }
+
+  // Move assignment operator
+  card &operator=(card &&other) noexcept {
+    if (this != &other) {
+      number = std::move(other.number);
+      winning_numbers = std::move(other.winning_numbers);
+      scratched_numbers = std::move(other.scratched_numbers);
+    }
+    return *this;
+  }
+
   bool operator==(const card &r) const { return this->number == r.number; }
-  bool operator<(const card &r) const { return this->number < r.number; }
-  bool operator>(const card &r) const { return this->number > r.number; }
+  bool operator<(const card &r) const { return this->number > r.number; }
+  bool operator>(const card &r) const { return this->number < r.number; }
+};
+
+struct cardHash {
+  std::size_t operator()(const card &c) const {
+    return std::hash<int>()(c.number);
+  }
 };
 
 card getCardCopy(std::string &result) {
@@ -99,7 +140,7 @@ card getCardCopy(std::string &result) {
   return n;
 }
 
-vector<int> getCardCopyCount(card &c) {
+vector<int> getCardCopyCount(const card &c) {
   int count = 0;
   for (const int &n : c.scratched_numbers) {
     count += c.winning_numbers.count(n) > 0 ? 1 : 0;
@@ -134,6 +175,34 @@ void solve2(vector<string> &lines) {
   cout << count << endl;
 }
 
+int maxCard = 0;
+
+void solve2_1(vector<string> &lines) {
+  vector<card> cards(lines.size());
+  unordered_map<card, int, cardHash> v;
+  for (size_t i = 0; i < lines.size(); i++) {
+    card c = getCardCopy(lines[i]);
+    cards[i] = c;
+    maxCard = max(maxCard, c.number);
+    v[c] = 1;
+  }
+  for (int i = 1; i <= maxCard; i++) {
+    int value = v[i];
+    auto key = cards[i - 1];
+    for (int j = 0; j < value; j++) {
+      auto vv = getCardCopyCount(key);
+      for (size_t i = 0; i < vv.size(); i++) {
+        v[vv[i]]++;
+      }
+    }
+  }
+  int count = 0;
+  for (const auto &[key, value] : v) {
+    count += value;
+  }
+  cout << count << endl;
+}
+
 int main() {
   vector<string> lines = FileOpener();
   vector<string> test_lines;
@@ -145,5 +214,6 @@ int main() {
   test_lines.push_back("Card 5: 87 83 26 28 32 | 88 30 70 12 93 22 82 36");
   test_lines.push_back("Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11");
   solve1(lines);
-  solve2(lines);
+  solve2_1(lines);
+  // solve2(lines);
 }
