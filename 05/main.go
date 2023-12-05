@@ -8,41 +8,12 @@ import (
 	"strings"
 )
 
-/*
-seed  soil
-0     0
-1     1
-...   ...
-48    48
-49    49
-50    52
-51    53
-...   ...
-96    98
-97    99
-98    50
-99    51
-*/
-
 type mapped struct {
 	to   int
 	from int
 	r    int
 }
 
-func soil_to_fertilizer(inp int) int {
-	return 0
-}
-
-//	func transfer(inp int) int {
-//		if inp < 50 || inp > 98 {
-//			return inp
-//		} else if inp >= 50 && inp <= 98 {
-//			return inp + 2
-//		} else {
-//			return inp - 98
-//		}
-//	}
 func transfer(inp int, m []mapped) int {
 	for _, maps := range m {
 		if inp >= maps.from {
