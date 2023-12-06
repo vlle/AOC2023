@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 type mapped struct {
@@ -19,7 +20,7 @@ func transfer(inp int, m []mapped) int {
 	for _, maps := range m {
 		if inp >= maps.from {
 			n := inp - maps.from
-			if n <= maps.r {
+			if n < maps.r {
 				return maps.to + n
 			}
 		}
@@ -189,32 +190,51 @@ func solve2(lines []string) {
 	// fmt.Println(seeds)
 	// seeds = mergeSlice(seeds)
 	fmt.Println(len(seeds))
-	minP := 9223372036854775806
-	for _, seed := range seeds {
-		var pn int
-		for j := seed.from; j < seed.from+seed.count; j++ {
-			// fmt.Println(j)
-			pn = transfer(j, seeds_to_soil)
-			pn = transfer(pn, soil_to_fertilizer)
-			pn = transfer(pn, fertilizer_to_water)
-			pn = transfer(pn, water_to_light)
-			pn = transfer(pn, light_to_temperature)
-			pn = transfer(pn, temperature_to_humidity)
-			pn = transfer(pn, humidity_to_location)
-			if minP > pn {
-				minP = pn
-				fmt.Println(minP)
+	var wg sync.WaitGroup
+	ch := make(chan int)
+	for i := range seeds {
+		wg.Add(1)
+		go func(seeds []seedRange) {
+			for _, seed := range seeds {
+				mpn := 9223372036854775807
+				for j := seed.from; j < seed.from+seed.count; j++ {
+					pn := transfer(j, seeds_to_soil)
+					pn = transfer(pn, soil_to_fertilizer)
+					pn = transfer(pn, fertilizer_to_water)
+					pn = transfer(pn, water_to_light)
+					pn = transfer(pn, light_to_temperature)
+					pn = transfer(pn, temperature_to_humidity)
+					pn = transfer(pn, humidity_to_location)
+					if pn < mpn {
+						mpn = pn
+					}
+				}
+				ch <- mpn
 			}
-		}
+			wg.Done()
+		}(seeds[i : i+2])
 	}
-	fmt.Println(minP)
+	var wg2 sync.WaitGroup
+	wg2.Add(1)
+	go func() {
+		pn := 9223372036854775807
+		for n := range ch {
+			pn = min(pn, n)
+		}
+		fmt.Println(pn)
+		wg2.Done()
+	}()
+	wg.Wait()
+	close(ch)
+	wg2.Wait()
 }
 
 func main() {
 	lines := common.FileOpener()
 	test_lines := common.TestFileOpener()
-	//solve1(test_lines)
-	//solve1(lines)
+	solve1(test_lines)
+	solve1(lines)
+
 	solve2(test_lines)
 	solve2(lines)
 }
